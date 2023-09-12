@@ -16,7 +16,7 @@ Route::delete('categories/{category}/force-delete',[CategoriesController::class,
 
 
 Route::group([
-    'middleware'=>'auth',
+    'middleware'=>['auth','auth.type:supper_admin,admin'],
     'as'=>'dashboard.',
     'prefix'=>'dashboard'
 

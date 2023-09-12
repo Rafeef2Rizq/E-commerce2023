@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Tag;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 class ProductsController extends Controller
 {
@@ -64,24 +65,53 @@ class ProductsController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        $product->update($request->except('tags'));
-       $tags=json_decode($request->post('tags'));
-       $saved_tags=Tag::all();
-       $tag_ids=[];
-       foreach($tags as $tag_name){
-         $slug=STR::slug($tag_name->value);
-         $tag=$saved_tags->where('slug','=',$slug)->first();
-         if(!$tag){
-          $tag=Tag::create([
-            'name'=>$tag_name->value,
-            'slug'=>$slug
-          ]);
-         }
-        $tag_ids[]=$tag->id;
-       }
-       $product->tags()->sync($tag_ids);
-        return to_route('dashboard.products.index')->with('success','Product updated successfuly');
+        $oldImage = $product->image;
+        $imagePath='';
+        if($request->hasFile('image')){
+            $imageObj=$request->file('image');
+            $imagePath=$imageObj->store('uploads', [
+                'disk' => 'public'
+              ]);
+        }
+        $data = $request->except('image');
+
+      
+        if ($imagePath) {
+          $data['image'] = $imagePath;
+        }
+    
+        $product->update($data);
+        if ($oldImage && $imagePath) {
+          Storage::disk('public')->delete($oldImage);
+        }
+    
+    
+        // Check if tags were provided in the request
+        if ($request->has('tags')) {
+            $tags = json_decode($request->post('tags'));
+            $saved_tags = Tag::all();
+            $tag_ids = [];
+    
+            foreach ($tags as $taglist) {
+                $slug = Str::slug($taglist->value);
+                $tag = $saved_tags->where('slug', '=', $slug)->first();
+    
+                if (!$tag) {
+                    $tag = Tag::create([
+                        'name' => $taglist->value,
+                        'slug' => $slug
+                    ]);
+                }
+    
+                $tag_ids[] = $tag->id;
+            }
+    
+            $product->tags()->sync($tag_ids);
+        }
+    
+        return redirect()->route('dashboard.products.index')->with('success', 'Product updated successfully');
     }
+    
 
     /**
      * Remove the specified resource from storage.
