@@ -8,7 +8,7 @@
         <span class="sale-tag">-{{$product->sale_percent}} %</span>
         @endif
         <div class="button">
-            <a href="product-details.html" class="btn"><i class="lni lni-cart"></i> Add to Cart</a>
+            <a href="{{route('cart.index')}}" class="btn"><i class="lni lni-cart"></i> Add to Cart</a>
         </div>
     </div>
     <div class="product-info">
